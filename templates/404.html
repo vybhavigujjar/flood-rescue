@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Page Not Found (404) | Shivamogga Flood Rescue</title>
+  <meta name="description" content="The requested flood rescue page or resource could not be found. Return to the live flood map or emergency SOS portal.">
+  <meta name="robots" content="noindex, follow">
+  
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="alternate icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #07172B;
+      color: #FFFFFF;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    .card {
+      background: #0B2545;
+      border: 1px solid #1C7293;
+      border-radius: 14px;
+      max-width: 580px;
+      width: 100%;
+      padding: 36px 28px;
+      text-align: center;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+    }
+    .badge {
+      display: inline-block;
+      background: #D1495B;
+      color: #fff;
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: 1.5px;
+      padding: 4px 14px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 26px;
+      margin: 0 0 12px;
+      color: #FFFFFF;
+      line-height: 1.3;
+    }
+    p {
+      color: #CADCFC;
+      font-size: 15px;
+      line-height: 1.6;
+      margin: 0 0 24px;
+    }
+    .nav-breadcrumbs {
+      font-size: 13px;
+      color: #8da4c4;
+      margin-bottom: 20px;
+    }
+    .nav-breadcrumbs a {
+      color: #5DE0BF;
+      text-decoration: none;
+    }
+    .nav-breadcrumbs a:hover {
+      text-decoration: underline;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+    @media (max-width: 480px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .btn-link {
+      display: block;
+      padding: 12px 14px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      transition: background 0.15s ease;
+    }
+    .btn-primary {
+      background: #F2A541;
+      color: #0B2545;
+      text-align: center;
+    }
+    .btn-primary:hover {
+      background: #ffb85c;
+    }
+    .btn-sos {
+      background: #D1495B;
+      color: #FFFFFF;
+      text-align: center;
+    }
+    .btn-sos:hover {
+      background: #e25b6d;
+    }
+    .btn-sec {
+      background: #13315C;
+      color: #CADCFC;
+      border: 1px solid #1C7293;
+    }
+    .btn-sec:hover {
+      background: #1a3f75;
+      color: #FFFFFF;
+    }
+    .emergency-box {
+      border-top: 1px solid #13315C;
+      padding-top: 18px;
+      font-size: 13px;
+      color: #CADCFC;
+      line-height: 1.5;
+    }
+    .emergency-box b {
+      color: #F2A541;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="nav-breadcrumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a> &gt; <span>404 Not Found</span>
+    </div>
+
+    <span class="badge">404 ERROR</span>
+    <h1>Page or Resource Not Found</h1>
+    <p>The page, report, or resource you are looking for does not exist or may have been updated. If you need urgent assistance, use our emergency flood links below.</p>
+
+    <div class="grid">
+      <a href="/" class="btn-link btn-primary">Live Flood Map</a>
+      <a href="/sos" class="btn-link btn-sos">Emergency SOS</a>
+      <a href="/report" class="btn-link btn-sec">Report Flooded Area</a>
+      <a href="/route" class="btn-link btn-sec">Safe Route Finder</a>
+      <a href="/first-aid" class="btn-link btn-sec" style="grid-column: 1 / -1; text-align: center;">Flood Safety &amp; First Aid Guide</a>
+    </div>
+
+    <div class="emergency-box">
+      <b>Immediate Life-Threatening Emergency?</b><br>
+      Call National Emergency Helpline <b>112</b> or Ambulance <b>108</b> immediately.
+    </div>
+  </div>
+</body>
+</html>

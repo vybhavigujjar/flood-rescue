@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rescue Team Command Dashboard | Shivamogga Flood Rescue</title>
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <link rel="canonical" href="{{ BASE_URL }}/rescue">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="alternate icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; display: flex; height: 100vh; }
+    #side { width: 400px; background: #0B2545; color: #fff; overflow-y: auto; padding: 16px; flex-shrink: 0; }
+    #map { flex: 1; }
+    h1 { font-size: 20px; margin: 0 0 12px; }
+    h2 { font-size: 15px; margin: 18px 0 8px; color: #F2A541; }
+    .card { background: #13315C; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 13px; line-height: 1.5; }
+    .card.assigned { border-left: 4px solid #F2A541; }
+    .pri { float: right; background: #D1495B; border-radius: 12px; padding: 1px 9px; font-weight: bold; }
+    .row { display: flex; gap: 6px; margin-top: 6px; }
+    button { border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; font-size: 13px; }
+    .go { background: #F2A541; color: #0B2545; font-weight: bold; }
+    .ok { background: #13A89E; color: #fff; }
+    .ghost { background: #CADCFC; color: #0B2545; }
+    input { padding: 9px; border-radius: 6px; border: none; width: 100%; font-size: 15px; margin-bottom: 8px; }
+    #login { max-width: 280px; margin: 25vh auto 0; text-align: center; background: #0B2545; padding: 24px; border-radius: 12px; border: 1px solid #1C7293; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    #app { display: none; width: 100%; }
+    .msg { font-size: 13px; color: #F2A541; min-height: 18px; }
+    small { color: #CADCFC; }
+    .back-home { display: inline-block; color: #5DE0BF; font-size: 13px; text-decoration: none; margin-top: 14px; }
+    .back-home:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div id="login" style="color:#fff">
+    <h1 style="color:#fff; font-size:18px;">Rescue Team Login</h1>
+    <input id="pin" type="password" placeholder="Enter Access PIN" aria-label="Rescue PIN">
+    <button class="go" id="login-btn" style="width:100%;padding:10px">Log in</button>
+    <div class="msg" id="login-msg"></div>
+    <a href="/" class="back-home">&larr; Return to Public Flood Map</a>
+  </div>
+
+  <div id="app" style="display:none">
+    <div id="side">
+      <div style="margin-bottom:8px"><a href="/" class="back-home" style="margin-top:0">&larr; Public Flood Map</a></div>
+      <h1>Rescue Team Dashboard <button class="ghost" id="logout" style="float:right">Log out</button></h1>
+      <h2>SOS requests (most urgent first)</h2>
+      <div id="sos-list"></div>
+      <h2>Active flood reports</h2>
+      <div id="rep-list"></div>
+    </div>
+    <div id="map"></div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    const $ = id => document.getElementById(id);
+    const NEED = { trapped: "Trapped by water", medical: "Medical help", food_water: "Food and water", other: "Other" };
+    const COLORS = { low: "#2E9E5B", medium: "#F2A541", high: "#D1495B" };
+    let map = null, sosData = {}, sosMarkers = {}, repData = {}, repLayers = {}, started = false;
+
+    function esc(t) { const d = document.createElement("div"); d.textContent = t == null ? "" : t; return d.innerHTML; }
+    async function api(url, method, body) {
+      const res = await fetch(url, { method: method || "GET", headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined });
+      let data = {};
+      try { data = await res.json(); } catch (e) {}
+      return { ok: res.ok, status: res.status, data };
+    }
+
+    async function login() {
+      const r = await api("/rescue/login", "POST", { pin: $("pin").value });
+      if (r.ok) start(); else $("login-msg").textContent = "Wrong PIN";
+    }
+    $("login-btn").onclick = login;
+    $("pin").onkeydown = e => { if (e.key === "Enter") login(); };
+    $("logout").onclick = async () => { await api("/rescue/logout", "POST"); location.reload(); };
+
+    async function start() {
+      const r = await api("/api/sos");
+      if (!r.ok) return;                        // not logged in: stay on the login box
+      $("login").style.display = "none";
+      $("app").style.display = "flex";
+      if (!started) { started = true; initMap(); }
+      sosData = {}; r.data.forEach(s => sosData[s.id] = s);
+      renderSos();
+      const rep = await api("/api/reports");
+      repData = {}; rep.data.forEach(x => repData[x.id] = x);
+      renderReports();
+    }
+
+    function initMap() {
+      map = L.map("map").setView([13.9299, 75.5681], 13);
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+      const socket = io();
+      socket.on("connect", () => socket.emit("join_rescue"));
+      socket.on("new_sos", s => { sosData[s.id] = s; renderSos(); });
+      socket.on("sos_update", s => { if (s.status === "rescued") delete sosData[s.id]; else sosData[s.id] = s; renderSos(); });
+      socket.on("new_report", r => { repData[r.id] = r; renderReports(); });
+      socket.on("report_resolved", d => { delete repData[d.id]; renderReports(); });
+      setInterval(start, 60000);                 // refresh priorities every minute (waiting time changes)
+    }
+
+    function renderSos() {
+      const list = Object.values(sosData).sort((a, b) => b.priority - a.priority);
+      $("sos-list").innerHTML = list.length ? "" : "<small>No open SOS requests.</small>";
+      Object.keys(sosMarkers).forEach(id => { map.removeLayer(sosMarkers[id]); delete sosMarkers[id]; });
+      list.forEach(s => {
+        const card = document.createElement("div");
+        card.className = "card" + (s.status === "assigned" ? " assigned" : "");
+        card.innerHTML = '<span class="pri">' + s.priority + "</span><b>" + esc(NEED[s.need]) + "</b> · " + s.people +
+          " people<br>" + (s.contact ? "Contact: " + esc(s.contact) + "<br>" : "") + (s.note ? esc(s.note) + "<br>" : "") +
+          "<small>" + esc(s.created_at) + " UTC · " + esc(s.status) + "</small>";
+        const row = document.createElement("div"); row.className = "row";
+        row.innerHTML = '<button class="ghost">Show on map</button>' +
+          (s.status === "open" ? '<button class="go">Assign team</button>' : "") + '<button class="ok">Rescued</button>';
+        const [show, a, b] = row.querySelectorAll("button");
+        show.onclick = () => map.setView([s.lat, s.lng], 16);
+        if (s.status === "open") { a.onclick = () => setStatus(s.id, "assigned"); b.onclick = () => setStatus(s.id, "rescued"); }
+        else { a.onclick = () => setStatus(s.id, "rescued"); }
+        card.appendChild(row);
+        $("sos-list").appendChild(card);
+        sosMarkers[s.id] = L.circleMarker([s.lat, s.lng], {
+          radius: 8 + Math.min(10, s.priority / 10), color: "#fff", weight: 2,
+          fillColor: s.status === "assigned" ? "#F2A541" : "#D1495B", fillOpacity: 1
+        }).addTo(map).bindPopup("<b>" + esc(NEED[s.need]) + "</b><br>" + s.people + " people<br>Priority " + s.priority);
+      });
+    }
+    async function setStatus(id, status) {
+      const r = await api("/api/sos/" + id, "PATCH", { status });
+      if (r.ok) { if (status === "rescued") delete sosData[id]; else sosData[id] = r.data; renderSos(); }
+    }
+
+    function renderReports() {
+      Object.keys(repLayers).forEach(id => { map.removeLayer(repLayers[id]); delete repLayers[id]; });
+      const list = Object.values(repData);
+      $("rep-list").innerHTML = list.length ? "" : "<small>No active flood reports.</small>";
+      list.forEach(r => {
+        const card = document.createElement("div"); card.className = "card";
+        card.innerHTML = "<b>" + esc(r.severity.toUpperCase()) + "</b> · " + r.depth_cm + " cm" +
+          (r.note ? "<br>" + esc(r.note) : "") + "<br><small>" + esc(r.created_at) + " UTC</small>";
+        const row = document.createElement("div"); row.className = "row";
+        row.innerHTML = '<button class="ghost">Show</button><button class="ok">Mark resolved</button>';
+        const [show, res] = row.querySelectorAll("button");
+        show.onclick = () => map.setView([r.lat, r.lng], 16);
+        res.onclick = async () => { const x = await api("/api/reports/" + r.id + "/resolve", "POST"); if (x.ok) { delete repData[r.id]; renderReports(); } };
+        card.appendChild(row);
+        $("rep-list").appendChild(card);
+        repLayers[r.id] = L.circle([r.lat, r.lng], { radius: r.radius_m, color: COLORS[r.severity], fillColor: COLORS[r.severity], fillOpacity: 0.3 }).addTo(map);
+      });
+    }
+
+    start();   // if the browser is already logged in, skip the login box
+  </script>
+</body>
+</html>

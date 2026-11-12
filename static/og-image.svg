@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#07172B"/>
+      <stop offset="50%" stop-color="#0B2545"/>
+      <stop offset="100%" stop-color="#13315C"/>
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#13315C"/>
+      <stop offset="100%" stop-color="#0e2343"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F2A541"/>
+      <stop offset="100%" stop-color="#FFC074"/>
+    </linearGradient>
+    <linearGradient id="tealGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#13A89E"/>
+      <stop offset="100%" stop-color="#5DE0BF"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Top accent stripe -->
+  <rect x="0" y="0" width="1200" height="8" fill="url(#accentGrad)"/>
+
+  <!-- Map Grid subtle decoration -->
+  <g stroke="#CADCFC" stroke-opacity="0.07" stroke-width="1.5">
+    <line x1="80" y1="0" x2="80" y2="630"/>
+    <line x1="240" y1="0" x2="240" y2="630"/>
+    <line x1="400" y1="0" x2="400" y2="630"/>
+    <line x1="560" y1="0" x2="560" y2="630"/>
+    <line x1="720" y1="0" x2="720" y2="630"/>
+    <line x1="880" y1="0" x2="880" y2="630"/>
+    <line x1="1040" y1="0" x2="1040" y2="630"/>
+    <line x1="0" y1="100" x2="1200" y2="100"/>
+    <line x1="0" y1="220" x2="1200" y2="220"/>
+    <line x1="0" y1="340" x2="1200" y2="340"/>
+    <line x1="0" y1="460" x2="1200" y2="460"/>
+    <line x1="0" y1="580" x2="1200" y2="580"/>
+  </g>
+
+  <!-- Badge -->
+  <rect x="80" y="70" width="230" height="36" rx="18" fill="#1C7293" fill-opacity="0.5"/>
+  <circle cx="100" cy="88" r="6" fill="#5DE0BF"/>
+  <text x="116" y="94" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#CADCFC" letter-spacing="1">LIVE EMERGENCY SYSTEM</text>
+
+  <!-- Main Headline -->
+  <text x="80" y="170" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="54" font-weight="800" fill="#FFFFFF">Shivamogga Flood Rescue</text>
+  <text x="80" y="225" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="24" font-weight="400" fill="#CADCFC">Real-time Flood Monitoring, Emergency SOS &amp; Safe Route Navigation</text>
+
+  <!-- Feature Cards -->
+  <g transform="translate(80, 270)">
+    <!-- Card 1 -->
+    <rect x="0" y="0" width="320" height="210" rx="14" fill="url(#cardGrad)" stroke="#1C7293" stroke-width="1.5"/>
+    <circle cx="45" cy="45" r="22" fill="#D1495B" fill-opacity="0.2"/>
+    <text x="45" y="52" text-anchor="middle" font-size="20" fill="#D1495B">&#9888;</text>
+    <text x="80" y="50" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#FFFFFF">Emergency SOS</text>
+    <text x="30" y="100" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" fill="#CADCFC" width="260">
+      <tspan x="30" dy="0">Direct distress beacon with</tspan>
+      <tspan x="30" dy="24">GPS coordinates, urgency</tspan>
+      <tspan x="30" dy="24">weighting &amp; rescue queue.</tspan>
+    </text>
+    <rect x="30" y="165" width="120" height="26" rx="6" fill="#D1495B"/>
+    <text x="90" y="182" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF">PRIORITY QUEUE</text>
+
+    <!-- Card 2 -->
+    <rect x="355" y="0" width="320" height="210" rx="14" fill="url(#cardGrad)" stroke="#1C7293" stroke-width="1.5"/>
+    <circle cx="400" cy="45" r="22" fill="#13A89E" fill-opacity="0.2"/>
+    <text x="400" y="52" text-anchor="middle" font-size="20" fill="#13A89E">&#10148;</text>
+    <text x="435" y="50" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#FFFFFF">Safe Route Finder</text>
+    <text x="385" y="100" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" fill="#CADCFC">
+      <tspan x="385" dy="0">A* pathfinding algorithm</tspan>
+      <tspan x="385" dy="24">bypassing flooded roads to</tspan>
+      <tspan x="385" dy="24">reach designated dry shelters.</tspan>
+    </text>
+    <rect x="385" y="165" width="130" height="26" rx="6" fill="#13A89E"/>
+    <text x="450" y="182" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF">FLOOD-AVOIDANCE</text>
+
+    <!-- Card 3 -->
+    <rect x="710" y="0" width="320" height="210" rx="14" fill="url(#cardGrad)" stroke="#1C7293" stroke-width="1.5"/>
+    <circle cx="755" cy="45" r="22" fill="#F2A541" fill-opacity="0.2"/>
+    <text x="755" y="52" text-anchor="middle" font-size="20" fill="#F2A541">&#9873;</text>
+    <text x="790" y="50" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#FFFFFF">Live Water Reports</text>
+    <text x="740" y="100" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" fill="#CADCFC">
+      <tspan x="740" dy="0">Crowdsourced water depth</tspan>
+      <tspan x="740" dy="24">logging with Open-Meteo</tspan>
+      <tspan x="740" dy="24">24-hour rainfall heatmaps.</tspan>
+    </text>
+    <rect x="740" y="165" width="130" height="26" rx="6" fill="#F2A541"/>
+    <text x="805" y="182" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#0B2545">REAL-TIME MAP</text>
+  </g>
+
+  <!-- Bottom Bar -->
+  <line x1="80" y1="530" x2="1120" y2="530" stroke="#13315C" stroke-width="1.5"/>
+  <text x="80" y="575" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" fill="#CADCFC">
+    Shivamogga, Karnataka &bull; Emergency Response Helplines: <tspan fill="#F2A541" font-weight="700">112</tspan> (National Emergency) &bull; <tspan fill="#F2A541" font-weight="700">108</tspan> (Ambulance)
+  </text>
+  <text x="1120" y="575" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14" fill="#5DE0BF" font-weight="600">
+    OpenStreetMap &bull; Open-Meteo &bull; Flask-SocketIO
+  </text>
+</svg>

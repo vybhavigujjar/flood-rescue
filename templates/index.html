@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page.title }}</title>
+  <meta name="description" content="{{ page.description }}">
+  <link rel="canonical" href="{{ BASE_URL }}{{ page.slug }}">
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph / WhatsApp / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ BASE_URL }}{{ page.slug }}">
+  <meta property="og:title" content="{{ page.title }}">
+  <meta property="og:description" content="{{ page.description }}">
+  <meta property="og:image" content="{{ BASE_URL }}/static/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Shivamogga Flood Rescue &amp; Safe Evacuation Route Finder preview">
+  <meta property="og:site_name" content="Shivamogga Flood Rescue">
+  <meta property="og:locale" content="en_IN">
+
+  <!-- Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="{{ BASE_URL }}{{ page.slug }}">
+  <meta name="twitter:title" content="{{ page.title }}">
+  <meta name="twitter:description" content="{{ page.description }}">
+  <meta name="twitter:image" content="{{ BASE_URL }}/static/og-image.png">
+  <meta name="twitter:image:alt" content="Shivamogga Flood Rescue application preview">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="alternate icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.svg') }}">
+
+  <!-- Structured Data: WebApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Shivamogga Flood Rescue & Safe Route Finder",
+    "url": "{{ BASE_URL }}{{ page.slug }}",
+    "applicationCategory": "EmergencyApplication",
+    "operatingSystem": "All modern browsers (Desktop and Mobile)",
+    "description": "{{ page.description }}",
+    "browserRequirements": "Requires JavaScript. Requires HTML5 Canvas.",
+    "featureList": [
+      "Real-time crowdsourced flood inundation reporting",
+      "Priority-weighted emergency SOS beacon dispatch",
+      "Flood-avoiding safe route navigation to relief shelters",
+      "OpenMeteo rainfall tracking and 24h hazard risk heatmaps"
+    ]
+  }
+  </script>
+
+  <!-- Structured Data: BreadcrumbList -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {% for b in page.breadcrumb %}
+      {
+        "@type": "ListItem",
+        "position": {{ loop.index }},
+        "name": "{{ b.name }}",
+        "item": "{{ BASE_URL }}{{ b.url }}"
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; height: 100vh; }
+    #sidebar { width: 360px; background: #0B2545; color: #fff; overflow-y: auto; padding: 16px; flex-shrink: 0; display: flex; flex-direction: column; }
+    #sidebar-content { flex: 1; }
+    #map { flex: 1; }
+    
+    .breadcrumbs { font-size: 12px; margin-bottom: 8px; color: #8da4c4; }
+    .breadcrumbs ol { list-style: none; padding: 0; margin: 0; display: flex; align-items: center; gap: 6px; }
+    .breadcrumbs li+li:before { content: "/"; color: #506887; margin-right: 6px; }
+    .breadcrumbs a { color: #5DE0BF; text-decoration: none; }
+    .breadcrumbs a:hover { text-decoration: underline; }
+    .breadcrumbs [aria-current="page"] { color: #CADCFC; font-weight: 600; }
+
+    h1 { font-size: 19px; margin: 0 0 4px; line-height: 1.3; color: #FFFFFF; }
+    .sub { color: #CADCFC; font-size: 13px; margin-bottom: 12px; line-height: 1.4; }
+    .loc { background: #13315C; border-radius: 8px; padding: 10px; font-size: 13px; margin-bottom: 12px; border: 1px solid #1C7293; }
+    .loc b { color: #F2A541; }
+    
+    .tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+    .tabs .tab-link { flex: 1; padding: 8px 2px; border: none; border-radius: 6px; background: #13315C; color: #CADCFC; cursor: pointer; font-size: 13px; text-decoration: none; text-align: center; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+    .tabs .tab-link:hover { background: #1a3f75; color: #fff; }
+    .tabs .tab-link.active { background: #1C7293; color: #fff; font-weight: bold; }
+    
+    .panel { display: none; }
+    .panel.active { display: block; }
+    label { display: block; font-size: 13px; margin: 10px 0 4px; font-weight: 600; }
+    select, input[type=number], input[type=text], textarea { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #1C7293; font-size: 14px; background: #fff; color: #0B2545; }
+    .btn { margin-top: 12px; width: 100%; padding: 10px; border: none; border-radius: 6px; background: #F2A541; color: #0B2545; font-weight: bold; font-size: 15px; cursor: pointer; transition: background 0.15s; }
+    .btn:hover { background: #ffb85c; }
+    .btn.alt { background: #CADCFC; font-size: 13px; padding: 7px; margin-top: 0; color: #0B2545; }
+    .btn.alt:hover { background: #e0ecff; }
+    .btn.sos { background: #D1495B; color: #fff; }
+    .btn.sos:hover { background: #e25b6d; }
+    .msg { font-size: 13px; margin-top: 10px; min-height: 18px; color: #CADCFC; }
+    .box { background: #13315C; border-radius: 8px; padding: 10px; font-size: 13px; margin-top: 12px; line-height: 1.5; border: 1px solid #1C7293; }
+    .warn { color: #F2A541; }
+    .good { color: #5DE0BF; }
+    details { background: #13315C; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-size: 13px; border: 1px solid #1C7293; }
+    summary { cursor: pointer; font-weight: bold; }
+    details ul { margin: 6px 0 0; padding-left: 18px; }
+    .legend span { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin: 0 4px 0 8px; }
+    .toggle { font-size: 13px; margin-top: 14px; }
+    .toggle input { margin-right: 6px; }
+    
+    .footer-links { margin-top: 16px; padding-top: 12px; border-top: 1px solid #13315C; font-size: 12px; color: #8da4c4; text-align: center; }
+    .footer-links a { color: #CADCFC; text-decoration: none; }
+    .footer-links a:hover { color: #F2A541; text-decoration: underline; }
+
+    @media (max-width: 800px) {
+      body { flex-direction: column-reverse; }
+      #sidebar { width: 100%; height: 55vh; }
+      #map { height: 45vh; }
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <div id="sidebar-content">
+      <nav aria-label="Breadcrumb" class="breadcrumbs">
+        <ol id="breadcrumb-list">
+          <li><a href="/">Home</a></li>
+          {% if page.slug != '/' %}
+          <li id="bc-current" aria-current="page">{{ page.breadcrumb[-1].name }}</li>
+          {% endif %}
+        </ol>
+      </nav>
+
+      <h1 id="page-h1">{{ page.h1 }}</h1>
+      <div class="sub" id="page-sub">{{ page.sub }}</div>
+
+      <div class="loc">
+        <div><b>Location:</b> <span id="picked">click the map to choose</span></div>
+        <button class="btn alt" id="gps" style="margin-top:8px">Use my current location</button>
+      </div>
+
+      <nav class="tabs" aria-label="Emergency Navigation Sections">
+        <a href="/report" data-tab="report" class="tab-link {% if page.tab == 'report' %}active{% endif %}">Report</a>
+        <a href="/sos" data-tab="sos" class="tab-link {% if page.tab == 'sos' %}active{% endif %}">SOS</a>
+        <a href="/route" data-tab="route" class="tab-link {% if page.tab == 'route' %}active{% endif %}">Route</a>
+        <a href="/first-aid" data-tab="aid" class="tab-link {% if page.tab == 'aid' %}active{% endif %}">First aid</a>
+      </nav>
+
+      <div class="panel {% if page.tab == 'report' %}active{% endif %}" id="tab-report">
+        <label for="r-sev">Flood severity</label>
+        <select id="r-sev">
+          <option value="low">Low (ankle deep - passable with caution)</option>
+          <option value="medium" selected>Medium (knee deep - impassable for small cars)</option>
+          <option value="high">High (waist deep or more - dangerous flash flood)</option>
+        </select>
+        <label for="r-depth">Observed water depth (cm)</label>
+        <input id="r-depth" type="number" min="0" max="1000" value="30">
+        <label for="r-note">Location note (optional)</label>
+        <textarea id="r-note" rows="2" maxlength="300" placeholder="e.g. road submerged near Gandhi Park junction, current flowing fast"></textarea>
+        <button class="btn" id="r-send">Report flood</button>
+        <div class="msg" id="r-msg"></div>
+      </div>
+
+      <div class="panel {% if page.tab == 'sos' %}active{% endif %}" id="tab-sos">
+        <div class="sub" style="color:#FFC074">Emergency rescue dispatch. Call <b>112</b> as well if your life is in immediate danger.</div>
+        <label for="s-need">Primary assistance needed</label>
+        <select id="s-need">
+          <option value="trapped">Trapped by floodwaters (need evacuation)</option>
+          <option value="medical">Immediate medical assistance</option>
+          <option value="food_water">Clean drinking water and food</option>
+          <option value="other">Other emergency need</option>
+        </select>
+        <label for="s-people">Number of people needing rescue</label>
+        <input id="s-people" type="number" min="1" max="200" value="1">
+        <label for="s-contact">Contact phone number or name (optional)</label>
+        <input id="s-contact" type="text" maxlength="60" placeholder="e.g. 9876543210 - Ramesh">
+        <label for="s-note">Location &amp; landmark details (optional)</label>
+        <textarea id="s-note" rows="2" maxlength="300" placeholder="e.g. 2nd floor balcony, water entered ground floor, one infant"></textarea>
+        <button class="btn sos" id="s-send">Send Emergency SOS</button>
+        <div class="msg" id="s-msg"></div>
+      </div>
+
+      <div class="panel {% if page.tab == 'route' %}active{% endif %}" id="tab-route">
+        <div class="sub">Computes an A* evacuation path from your location to safety that avoids flooded streets.</div>
+        <label for="rt-shelter">Destination shelter</label>
+        <select id="rt-shelter"><option value="nearest">Nearest dry shelter (automatic)</option></select>
+        <button class="btn" id="rt-go">Find safe evacuation route</button>
+        <div class="msg" id="rt-msg"></div>
+        <div class="box" id="rt-info" style="display:none"></div>
+      </div>
+
+      <div class="panel {% if page.tab == 'aid' %}active{% endif %}" id="tab-aid">
+        <details open><summary>Immediate Emergency Steps</summary><ul>
+          <li>Call <b>112</b> (National Emergency) or <b>108</b> (Ambulance).</li>
+          <li>Move to higher ground immediately. Do not wait for water levels to rise.</li></ul></details>
+        <details><summary>Floodwater Safety</summary><ul>
+          <li>Never walk, swim, or drive through flowing floodwaters. Just 15 cm of rapid water can sweep an adult away.</li>
+          <li>Stay clear of submerged electrical fixtures and downed power lines. Switch off main breakers if dry.</li></ul></details>
+        <details><summary>Person Caught in Water</summary><ul>
+          <li>Do not enter the swift current. Throw a buoyant rope, float, or container and sound the alarm.</li>
+          <li>Once retrieved, prevent hypothermia, keep them dry, check breathing, and seek medical help.</li></ul></details>
+        <details><summary>Wounds &amp; Contamination</summary><ul>
+          <li>Press firmly with a sterile bandage or clean cloth to arrest bleeding.</li>
+          <li>Floodwater carries sewage and toxic pathogens. Disinfect wounds promptly with safe water.</li></ul></details>
+        <details><summary>Safe Drinking Water</summary><ul>
+          <li>Assume municipal tap water and wells are contaminated. Drink bottled water or boil for at least 1 minute.</li></ul></details>
+        <div class="sub" style="margin-top:8px">Emergency guidance only. Follow instructions from local disaster authorities.</div>
+      </div>
+
+      <div class="toggle"><label style="display:inline"><input type="checkbox" id="risk-toggle">Show flood risk zones</label></div>
+      <div class="toggle legend">Flood reports:
+        <span style="background:#2E9E5B"></span>low <span style="background:#F2A541"></span>medium <span style="background:#D1495B"></span>high</div>
+      <div class="msg" id="info"></div>
+    </div>
+
+    <div class="footer-links">
+      <a href="/rescue" rel="nofollow">Rescue Team Login</a> &bull;
+      <a href="/first-aid">Safety Guide</a> &bull;
+      <a href="/sos">Emergency SOS</a>
+    </div>
+  </div>
+  <div id="map" role="region" aria-label="Interactive Flood Map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    const COLORS = { low: "#2E9E5B", medium: "#F2A541", high: "#D1495B" };
+    const RISK_COLORS = { low: "#2E9E5B", medium: "#F2A541", high: "#D1495B" };
+    const $ = id => document.getElementById(id);
+    let picked = null, pickMarker = null;
+    const reportLayers = {};              // report id -> circle on the map
+    const riskLayer = L.layerGroup();
+    const routeLayer = L.layerGroup();
+
+    // Map initialization with graceful error handling
+    const map = L.map("map").setView([13.9299, 75.5681], 13);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\" rel=\"noopener\">OpenStreetMap</a> contributors"
+    }).addTo(map);
+    routeLayer.addTo(map);
+
+    // Dynamic metadata for client-side tab switching
+    const TAB_INFO = {
+      report: {
+        slug: "/report",
+        title: "Report Flood Water & Inundation | Shivamogga Flood Rescue",
+        h1: "Report Flooded Roads & Waterlogging",
+        sub: "Submit flood depths to alert rescue teams and guide safe evacuation",
+        bc: "Report Flood"
+      },
+      sos: {
+        slug: "/sos",
+        title: "Emergency Flood SOS & Rescue Request | Shivamogga Flood Rescue",
+        h1: "Emergency SOS Rescue Request",
+        sub: "Send your location and rescue needs directly to field rescue teams",
+        bc: "SOS Request"
+      },
+      route: {
+        slug: "/route",
+        title: "Safe Evacuation Route Finder | Shivamogga Flood Rescue",
+        h1: "Safe Flood Evacuation Route Finder",
+        sub: "Find dry road paths to the nearest relief shelters avoiding flooded areas",
+        bc: "Safe Route"
+      },
+      aid: {
+        slug: "/first-aid",
+        title: "Flood Safety Guidelines & First Aid | Shivamogga Flood Rescue",
+        h1: "Flood Emergency Safety & First Aid",
+        sub: "Essential survival tips, water safety rules, and emergency helplines",
+        bc: "First Aid"
+      }
+    };
+
+    function switchTab(tabName, push=true) {
+      document.querySelectorAll(".tabs .tab-link").forEach(x => {
+        if (x.dataset.tab === tabName) x.classList.add("active");
+        else x.classList.remove("active");
+      });
+      document.querySelectorAll(".panel").forEach(x => x.classList.remove("active"));
+      const p = $("tab-" + tabName);
+      if (p) p.classList.add("active");
+
+      const info = TAB_INFO[tabName];
+      if (info) {
+        document.title = info.title;
+        $("page-h1").textContent = info.h1;
+        $("page-sub").textContent = info.sub;
+
+        const bcCurrent = $("bc-current");
+        if (bcCurrent) {
+          bcCurrent.textContent = info.bc;
+        } else {
+          const bcList = $("breadcrumb-list");
+          if (bcList) {
+            const li = document.createElement("li");
+            li.id = "bc-current";
+            li.setAttribute("aria-current", "page");
+            li.textContent = info.bc;
+            bcList.appendChild(li);
+          }
+        }
+        if (push && window.location.pathname !== info.slug) {
+          history.pushState({ tab: tabName }, "", info.slug);
+        }
+      }
+    }
+
+    document.querySelectorAll(".tabs .tab-link").forEach(link => {
+      link.addEventListener("click", e => {
+        e.preventDefault();
+        switchTab(link.dataset.tab, true);
+      });
+    });
+
+    window.addEventListener("popstate", () => {
+      const path = window.location.pathname;
+      let target = "report";
+      if (path === "/sos") target = "sos";
+      else if (path === "/route") target = "route";
+      else if (path === "/first-aid") target = "aid";
+      switchTab(target, false);
+    });
+
+    // Make user-written text safe before showing in a popup
+    function esc(t) {
+      const d = document.createElement("div");
+      d.textContent = t == null ? "" : t;
+      return d.innerHTML;
+    }
+
+    async function getJSON(url, options) {
+      try {
+        const res = await fetch(url, options);
+        let body = {};
+        try { body = await res.json(); } catch (e) {}
+        return { ok: res.ok, body };
+      } catch (err) {
+        return { ok: false, body: { error: "Network or server connection failed" } };
+      }
+    }
+
+    function postJSON(url, data) {
+      return getJSON(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+    }
+
+    // ---------- choosing a location ----------
+    function setPicked(lat, lng) {
+      picked = { lat, lng };
+      if (pickMarker) map.removeLayer(pickMarker);
+      pickMarker = L.marker([lat, lng]).addTo(map);
+      $("picked").textContent = lat.toFixed(5) + ", " + lng.toFixed(5);
+    }
+    map.on("click", e => setPicked(e.latlng.lat, e.latlng.lng));
+    $("gps").onclick = () => {
+      if (!navigator.geolocation) {
+        $("info").textContent = "Your browser cannot share location.";
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        p => {
+          setPicked(p.coords.latitude, p.coords.longitude);
+          map.setView([p.coords.latitude, p.coords.longitude], 15);
+        },
+        () => {
+          $("info").textContent = "Could not get your location. Click the map instead.";
+        }
+      );
+    };
+
+    // ---------- flood reports ----------
+    function addReport(r) {
+      if (reportLayers[r.id]) return;
+      reportLayers[r.id] = L.circle([r.lat, r.lng], {
+        radius: r.radius_m, color: COLORS[r.severity], fillColor: COLORS[r.severity], fillOpacity: 0.35
+      }).addTo(map).bindPopup(
+        "<b>" + esc(r.severity.toUpperCase()) + "</b> flood<br>Water depth: " + r.depth_cm + " cm<br>" +
+        (r.note ? esc(r.note) + "<br>" : "") + "<small>" + esc(r.created_at) + " UTC</small>"
+      );
+    }
+    function removeReport(id) {
+      if (reportLayers[id]) {
+        map.removeLayer(reportLayers[id]);
+        delete reportLayers[id];
+      }
+    }
+    getJSON("/api/reports").then(r => r.ok && Array.isArray(r.body) && r.body.forEach(addReport));
+
+    $("r-send").onclick = async () => {
+      if (!picked) {
+        $("r-msg").textContent = "Click the map to choose the location first.";
+        return;
+      }
+      $("r-msg").textContent = "Submitting flood report...";
+      const r = await postJSON("/api/reports", {
+        lat: picked.lat, lng: picked.lng, severity: $("r-sev").value,
+        depth_cm: $("r-depth").value, note: $("r-note").value
+      });
+      $("r-msg").textContent = r.ok ? "Report sent. Thank you!" : "Error: " + (r.body.error || "Unable to submit");
+      if (r.ok) $("r-note").value = "";
+    };
+
+    // ---------- SOS ----------
+    $("s-send").onclick = async () => {
+      if (!picked) {
+        $("s-msg").textContent = "Choose your location first (click the map or use GPS location).";
+        return;
+      }
+      $("s-msg").textContent = "Transmitting emergency SOS...";
+      const r = await postJSON("/api/sos", {
+        lat: picked.lat, lng: picked.lng, need: $("s-need").value, people: $("s-people").value,
+        contact: $("s-contact").value, note: $("s-note").value
+      });
+      $("s-msg").textContent = r.ok ? r.body.message : "Error: " + (r.body.error || "Unable to send SOS");
+    };
+
+    // ---------- shelters ----------
+    getJSON("/api/shelters").then(r => {
+      if (!r.ok || !Array.isArray(r.body)) return;
+      r.body.forEach(s => {
+        L.circleMarker([s.lat, s.lng], { radius: 9, color: "#0B2545", fillColor: "#1C7293", fillOpacity: 1 })
+          .addTo(map).bindPopup("<b>" + esc(s.name) + "</b><br>Designated Flood Shelter");
+        const o = document.createElement("option");
+        o.value = s.id;
+        o.textContent = s.name;
+        $("rt-shelter").appendChild(o);
+      });
+    });
+
+    // ---------- safe route ----------
+    let lastRouteFrom = null;
+    $("rt-go").onclick = async () => {
+      if (!picked) {
+        $("rt-msg").textContent = "Choose your starting point first by clicking the map.";
+        return;
+      }
+      $("rt-msg").textContent = "Calculating safe route...";
+      const sel = $("rt-shelter").value;
+      const r = await postJSON("/api/route", {
+        from: { lat: picked.lat, lng: picked.lng },
+        shelter_id: sel === "nearest" ? "nearest" : Number(sel)
+      });
+      routeLayer.clearLayers();
+      if (!r.ok) {
+        $("rt-msg").textContent = "Error: " + (r.body.error || "Route could not be calculated");
+        $("rt-info").style.display = "none";
+        return;
+      }
+      $("rt-msg").textContent = "";
+      const d = r.body;
+      if (!d.same_route) {
+        L.polyline(d.shortest.coords, { color: "#8a8a8a", weight: 4, dashArray: "8 8" }).addTo(routeLayer);
+      }
+      const line = L.polyline(d.safe.coords, { color: "#13A89E", weight: 6 }).addTo(routeLayer);
+      map.fitBounds(line.getBounds(), { padding: [40, 40] });
+      let html = "<b>Destination:</b> " + esc(d.shelter.name) + "<br><b>Safe evacuation distance:</b> " + (d.safe.distance_m / 1000).toFixed(2) + " km";
+      html += d.safe.crosses_flood
+        ? '<br><span class="warn">Warning: no fully dry route found. This route still passes near a high flood zone. Do not attempt on foot; submit an SOS beacon.</span>'
+        : '<br><span class="good">Avoids all reported high-severity flood inundations.</span>';
+      if (!d.same_route) {
+        html += "<br><b>Direct shortest route (grey dashed):</b> " + (d.shortest.distance_m / 1000).toFixed(2) + " km" +
+          (d.shortest.crosses_flood ? ' <span class="warn">(passes through flood zone)</span>' : "");
+      } else {
+        html += "<br>The shortest route is currently free of reported flood hazards.";
+      }
+      $("rt-info").innerHTML = html;
+      $("rt-info").style.display = "block";
+      lastRouteFrom = true;
+    };
+
+    // ---------- risk zones ----------
+    async function drawRisk() {
+      riskLayer.clearLayers();
+      const r = await getJSON("/api/risk");
+      if (!r.ok || !r.body.cells) return;
+      r.body.cells.forEach(c => {
+        L.rectangle([[c.lat_min, c.lng_min], [c.lat_max, c.lng_max]], {
+          color: RISK_COLORS[c.level], weight: 1, fillOpacity: 0.12
+        }).addTo(riskLayer).bindPopup("Risk score: <b>" + c.score + "/100</b> (" + c.level + ")<br>Reports in this grid: " + c.reports);
+      });
+      const rain = r.body.rain_24h_mm;
+      $("info").textContent = rain == null ? "Rainfall monitoring data unavailable." : "Open-Meteo rain in last 24h: " + rain + " mm";
+    }
+    $("risk-toggle").onchange = e => {
+      if (e.target.checked) {
+        riskLayer.addTo(map);
+        drawRisk();
+      } else {
+        map.removeLayer(riskLayer);
+      }
+    };
+
+    // ---------- live updates ----------
+    try {
+      const socket = io();
+      function onChange() {
+        if ($("risk-toggle").checked) drawRisk();
+        if (lastRouteFrom) $("rt-msg").textContent = "Flood conditions updated. Click Find safe evacuation route to refresh.";
+      }
+      socket.on("new_report", r => { addReport(r); onChange(); });
+      socket.on("report_resolved", d => { removeReport(d.id); onChange(); });
+    } catch (e) {
+      console.warn("WebSocket live updates unavailable:", e);
+    }
+  </script>
+</body>
+</html>

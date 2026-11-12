@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: flood-rescue-shivamogga
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: RESCUE_PIN
+        value: "1234"
+      - key: CENTER_LAT
+        value: "13.9299"
+      - key: CENTER_LNG
+        value: "75.5681"
